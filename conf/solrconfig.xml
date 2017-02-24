@@ -35,7 +35,7 @@
          that you fully re-index after changing this setting as it can
          affect both how text is indexed and queried.
     -->
-    <luceneMatchVersion>5.5.3</luceneMatchVersion>
+    <luceneMatchVersion>5.5.4</luceneMatchVersion>
 
     <!-- <lib/> directives can be used to instruct Solr to load any Jars
          identified and use them to resolve any "plugins" specified in
@@ -72,24 +72,17 @@
          The examples below can be used to load some solr-contribs along
          with their external dependencies.
       -->
-
-    <!-- Text extraction (SOLR Cell) library -->
     <lib dir="${solr.install.dir:../..}/contrib/extraction/lib" regex=".*\.jar" />
     <lib dir="${solr.install.dir:../..}/dist/" regex="solr-cell-\d.*\.jar" />
-
     <!--
-    <lib dir="../../contrib/clustering/lib/" regex=".*\.jar" />
-    <lib dir="../../dist/" regex="solr-clustering-\d.*\.jar" />
+    <lib dir="${solr.install.dir:../..}/contrib/clustering/lib/" regex=".*\.jar" />
+    <lib dir="${solr.install.dir:../..}/dist/" regex="solr-clustering-\d.*\.jar" />
     -->
-
-    <!-- Language Detection library -->
     <lib dir="${solr.install.dir:../..}/contrib/langid/lib/" regex=".*\.jar" />
     <lib dir="${solr.install.dir:../..}/dist/" regex="solr-langid-\d.*\.jar" />
-
-
     <!--
-    <lib dir="../../contrib/velocity/lib" regex=".*\.jar" />
-    <lib dir="../../dist/" regex="solr-velocity-\d.*\.jar" />
+    <lib dir="${solr.install.dir:../..}/contrib/velocity/lib" regex=".*\.jar" />
+    <lib dir="${solr.install.dir:../..}/dist/" regex="solr-velocity-\d.*\.jar" />
     -->
 
     <!-- an exact 'path' can be used instead of a 'dir' to specify a
@@ -125,32 +118,19 @@
          persistent, and doesn't work with replication.
       -->
     <directoryFactory name="DirectoryFactory"
-                      class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}">
-
-
-        <!-- These will be used if you are using the solr.HdfsDirectoryFactory,
-             otherwise they will be ignored. If you don't plan on using hdfs,
-             you can safely remove this section. -->
-        <!-- The root directory that collection data should be written to. -->
-        <str name="solr.hdfs.home">${solr.hdfs.home:}</str>
-        <!-- The hadoop configuration files to use for the hdfs client. -->
-        <str name="solr.hdfs.confdir">${solr.hdfs.confdir:}</str>
-        <!-- Enable/Disable the hdfs cache. -->
-        <str name="solr.hdfs.blockcache.enabled">${solr.hdfs.blockcache.enabled:true}</str>
-        <!-- Enable/Disable using one global cache for all SolrCores.
-             The settings used will be from the first HdfsDirectoryFactory created. -->
-        <str name="solr.hdfs.blockcache.global">${solr.hdfs.blockcache.global:true}</str>
-
-    </directoryFactory>
+                      class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
 
     <!-- The CodecFactory for defining the format of the inverted index.
          The default implementation is SchemaCodecFactory, which is the official Lucene
          index format, but hooks into the schema to provide per-field customization of
          the postings lists and per-document values in the fieldType element
          (postingsFormat/docValuesFormat). Note that most of the alternative implementations
-         are experimental, so if you choose to customize the index format, its a good
+         are experimental, so if you choose to customize the index format, it's a good
          idea to convert back to the official format e.g. via IndexWriter.addIndexes(IndexReader)
          before upgrading to a newer version to avoid unnecessary reindexing.
+         A "compressionMode" string element can be added to <codecFactory> to choose
+         between the existing compression modes in the default codec: "BEST_SPEED" (default)
+         or "BEST_COMPRESSION".
     -->
     <codecFactory class="solr.SchemaCodecFactory"/>
 
@@ -161,8 +141,8 @@
            <str name="managedSchemaResourceName">managed-schema</str>
          </schemaFactory>
 
-         When ManagedIndexSchemaFactory is specified, Solr will load the schema from
-         he resource named in 'managedSchemaResourceName', rather than from schema.xml.
+         When ManagedIndexSchemaFactory is specified instead, Solr will load the schema from
+         the resource named in 'managedSchemaResourceName', rather than from schema.xml.
          Note that the managed schema resource CANNOT be named schema.xml.  If the managed
          schema does not exist, Solr will create it after reading schema.xml, then rename
          'schema.xml' to 'schema.xml.bak'.
@@ -184,69 +164,6 @@
          Note: This replaces <indexDefaults> and <mainIndex> from older versions
          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <indexConfig>
-        <!-- maxFieldLength was removed in 4.0. To get similar behavior, include a
-             LimitTokenCountFilterFactory in your fieldType definition. E.g.
-         <filter class="solr.LimitTokenCountFilterFactory" maxTokenCount="10000"/>
-        -->
-        <!-- Maximum time to wait for a write lock (ms) for an IndexWriter. Default: 1000 -->
-        <!-- <writeLockTimeout>1000</writeLockTimeout>  -->
-
-        <!-- The maximum number of simultaneous threads that may be
-             indexing documents at once in IndexWriter; if more than this
-             many threads arrive they will wait for others to finish.
-             Default in Solr/Lucene is 8. -->
-        <!-- <maxIndexingThreads>8</maxIndexingThreads>  -->
-
-        <!-- Expert: Enabling compound file will use less files for the index,
-             using fewer file descriptors on the expense of performance decrease.
-             Default in Lucene is "true". Default in Solr is "false" (since 3.6) -->
-        <!-- <useCompoundFile>false</useCompoundFile> -->
-
-        <!-- ramBufferSizeMB sets the amount of RAM that may be used by Lucene
-             indexing for buffering added documents and deletions before they are
-             flushed to the Directory.
-             maxBufferedDocs sets a limit on the number of documents buffered
-             before flushing.
-             If both ramBufferSizeMB and maxBufferedDocs is set, then
-             Lucene will flush based on whichever limit is hit first.
-             The default is 100 MB.  -->
-        <!-- <ramBufferSizeMB>100</ramBufferSizeMB> -->
-        <!-- <maxBufferedDocs>1000</maxBufferedDocs> -->
-
-        <!-- Expert: Merge Policy
-             The Merge Policy in Lucene controls how merging of segments is done.
-             The default since Solr/Lucene 3.3 is TieredMergePolicy.
-             The default since Lucene 2.3 was the LogByteSizeMergePolicy,
-             Even older versions of Lucene used LogDocMergePolicy.
-          -->
-        <!--
-            <mergePolicy class="org.apache.lucene.index.TieredMergePolicy">
-              <int name="maxMergeAtOnce">10</int>
-              <int name="segmentsPerTier">10</int>
-            </mergePolicy>
-          -->
-
-        <!-- Merge Factor
-             The merge factor controls how many segments will get merged at a time.
-             For TieredMergePolicy, mergeFactor is a convenience parameter which
-             will set both MaxMergeAtOnce and SegmentsPerTier at once.
-             For LogByteSizeMergePolicy, mergeFactor decides how many new segments
-             will be allowed before they are merged into one.
-             Default is 10 for both merge policies.
-          -->
-        <!--
-        <mergeFactor>10</mergeFactor>
-          -->
-
-        <!-- Expert: Merge Scheduler
-             The Merge Scheduler in Lucene controls how merges are
-             performed.  The ConcurrentMergeScheduler (Lucene 2.3 default)
-             can perform merges in the background using separate threads.
-             The SerialMergeScheduler (Lucene 2.2 default) does not.
-         -->
-        <!--
-           <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
-           -->
 
         <!-- LockFactory
 
@@ -269,63 +186,6 @@
         -->
         <lockType>${solr.lock.type:native}</lockType>
 
-        <!-- Unlock On Startup
-
-             If true, unlock any held write or commit locks on startup.
-             This defeats the locking mechanism that allows multiple
-             processes to safely access a lucene index, and should be used
-             with care. Default is "false".
-
-             This is not needed if lock type is 'single'
-         -->
-        <!--
-        <unlockOnStartup>false</unlockOnStartup>
-          -->
-
-        <!-- Expert: Controls how often Lucene loads terms into memory
-             Default is 128 and is likely good for most everyone.
-          -->
-        <!-- <termIndexInterval>128</termIndexInterval> -->
-
-        <!-- If true, IndexReaders will be opened/reopened from the IndexWriter
-             instead of from the Directory. Hosts in a master/slave setup
-             should have this set to false while those in a SolrCloud
-             cluster need to be set to true. Default: true
-          -->
-        <!--
-        <nrtMode>true</nrtMode>
-          -->
-
-        <!-- Commit Deletion Policy
-             Custom deletion policies can be specified here. The class must
-             implement org.apache.lucene.index.IndexDeletionPolicy.
-
-             The default Solr IndexDeletionPolicy implementation supports
-             deleting index commit points on number of commits, age of
-             commit point and optimized status.
-
-             The latest commit point should always be preserved regardless
-             of the criteria.
-        -->
-        <!--
-        <deletionPolicy class="solr.SolrDeletionPolicy">
-        -->
-        <!-- The number of commit points to be kept -->
-        <!-- <str name="maxCommitsToKeep">1</str> -->
-        <!-- The number of optimized commit points to be kept -->
-        <!-- <str name="maxOptimizedCommitsToKeep">0</str> -->
-        <!--
-            Delete all commit points once they have reached the given age.
-            Supports DateMathParser syntax e.g.
-          -->
-        <!--
-           <str name="maxCommitAge">30MINUTES</str>
-           <str name="maxCommitAge">1DAY</str>
-        -->
-        <!--
-        </deletionPolicy>
-        -->
-
         <!-- Lucene Infostream
 
              To aid in advanced debugging, Lucene provides an "InfoStream"
@@ -336,7 +196,6 @@
              this is enabled here, and controlled through log4j.properties.
           -->
         <infoStream>true</infoStream>
-
     </indexConfig>
 
 
@@ -366,9 +225,17 @@
              uncommitted changes to the index, so use of a hard autoCommit
              is recommended (see below).
              "dir" - the target directory for transaction logs, defaults to the
-                    solr data directory.  -->
+                    solr data directory.
+             "numVersionBuckets" - sets the number of buckets used to keep
+                    track of max version values when checking for re-ordered
+                    updates; increase this value to reduce the cost of
+                    synchronizing access to version buckets during high-volume
+                    indexing, this requires 8 bytes (long) * numVersionBuckets
+                    of heap space per Solr core.
+        -->
         <updateLog>
             <str name="dir">${solr.ulog.dir:}</str>
+            <int name="numVersionBuckets">${solr.ulog.numVersionBuckets:65536}</int>
         </updateLog>
 
         <!-- AutoCommit
@@ -407,76 +274,7 @@
             <maxTime>${solr.autoSoftCommit.maxTime:-1}</maxTime>
         </autoSoftCommit>
 
-        <!-- Update Related Event Listeners
-
-             Various IndexWriter related events can trigger Listeners to
-             take actions.
-
-             postCommit - fired after every commit or optimize command
-             postOptimize - fired after every optimize command
-          -->
-        <!-- The RunExecutableListener executes an external command from a
-             hook such as postCommit or postOptimize.
-
-             exe - the name of the executable to run
-             dir - dir to use as the current working directory. (default=".")
-             wait - the calling thread waits until the executable returns.
-                    (default="true")
-             args - the arguments to pass to the program.  (default is none)
-             env - environment variables to set.  (default is none)
-          -->
-        <!-- This example shows how RunExecutableListener could be used
-             with the script based replication...
-             http://wiki.apache.org/solr/CollectionDistribution
-          -->
-        <!--
-           <listener event="postCommit" class="solr.RunExecutableListener">
-             <str name="exe">solr/bin/snapshooter</str>
-             <str name="dir">.</str>
-             <bool name="wait">true</bool>
-             <arr name="args"> <str>arg1</str> <str>arg2</str> </arr>
-             <arr name="env"> <str>MYVAR=val1</str> </arr>
-           </listener>
-          -->
-
     </updateHandler>
-
-    <!-- IndexReaderFactory
-
-         Use the following format to specify a custom IndexReaderFactory,
-         which allows for alternate IndexReader implementations.
-
-         ** Experimental Feature **
-
-         Please note - Using a custom IndexReaderFactory may prevent
-         certain other features from working. The API to
-         IndexReaderFactory may change without warning or may even be
-         removed from future releases if the problems cannot be
-         resolved.
-
-
-         ** Features that may not work with custom IndexReaderFactory **
-
-         The ReplicationHandler assumes a disk-resident index. Using a
-         custom IndexReader implementation may cause incompatibility
-         with ReplicationHandler and may cause replication to not work
-         correctly. See SOLR-1366 for details.
-
-      -->
-    <!--
-    <indexReaderFactory name="IndexReaderFactory" class="package.class">
-      <str name="someArg">Some Value</str>
-    </indexReaderFactory >
-    -->
-    <!-- By explicitly declaring the Factory, the termIndexDivisor can
-         be specified.
-      -->
-    <!--
-       <indexReaderFactory name="IndexReaderFactory"
-                           class="solr.StandardIndexReaderFactory">
-         <int name="setTermIndexDivisor">12</int>
-       </indexReaderFactory >
-      -->
 
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          Query section - these settings control query time things like caches
@@ -496,6 +294,17 @@
 
           -->
         <maxBooleanClauses>1024</maxBooleanClauses>
+
+
+        <!-- Slow Query Threshold (in millis)
+
+             At high request rates, logging all requests can become a bottleneck
+             and therefore INFO logging is often turned off. However, it is still
+             useful to be able to set a latency threshold above which a request
+             is considered "slow" and log that request at WARN level so we can
+             easily identify slow queries.
+        -->
+        <slowQueryThresholdMillis>-1</slowQueryThresholdMillis>
 
 
         <!-- Solr Internal Query Caches
@@ -536,9 +345,12 @@
 
         <!-- Query Result Cache
 
-             Caches results of searches - ordered lists of document ids
-             (DocList) based on a query, a sort, and the range of documents requested.
-          -->
+            Caches results of searches - ordered lists of document ids
+            (DocList) based on a query, a sort, and the range of documents requested.
+            Additional supported parameter by LRUCache:
+               maxRamMB - the maximum amount of RAM (in MB) that this cache is allowed
+                          to occupy
+         -->
         <queryResultCache class="solr.LRUCache"
                           size="512"
                           initialSize="512"
@@ -658,12 +470,9 @@
         <!-- QuerySenderListener takes an array of NamedList and executes a
              local query request for each NamedList in sequence.
           -->
+        <!--
         <listener event="newSearcher" class="solr.QuerySenderListener">
             <arr name="queries">
-                <!--
-                   <lst><str name="q">solr</str><str name="sort">price asc</str></lst>
-                   <lst><str name="q">rocks</str><str name="sort">weight asc</str></lst>
-                  -->
             </arr>
         </listener>
         <listener event="firstSearcher" class="solr.QuerySenderListener">
@@ -673,6 +482,7 @@
                 </lst>
             </arr>
         </listener>
+        -->
 
         <!-- Use Cold Searcher
 
@@ -842,7 +652,21 @@
         <lst name="defaults">
             <str name="echoParams">explicit</str>
             <int name="rows">10</int>
-            <str name="df">text</str>
+            <!-- Controls the distribution of a query to shards other than itself.
+                 Consider making 'preferLocalShards' true when:
+                   1) maxShardsPerNode > 1
+                   2) Number of shards > 1
+                   3) CloudSolrClient or LbHttpSolrServer is used by clients.
+                 Without this option, every core broadcasts the distributed query to
+                 a replica of each shard where the replicas are chosen randomly.
+                 This option directs the cores to prefer cores hosted locally, thus
+                 preventing network delays between machines.
+                 This behavior also immunizes a bad/slow machine from slowing down all
+                 the good machines (if those good machines were querying this bad one).
+
+                 Specify this option=false for clients connecting through HttpSolrServer
+            -->
+            <bool name="preferLocalShards">false</bool>
         </lst>
         <!-- In addition to defaults, "appends" params can be specified
              to identify values which should be appended to the list of
@@ -909,24 +733,6 @@
     </requestHandler>
 
 
-    <!-- realtime get handler, guaranteed to return the latest stored fields of
-         any document, without the need to commit or open a new searcher.  The
-         current implementation relies on the updateLog feature being enabled.
-
-         ** WARNING **
-         Do NOT disable the realtime get handler at /get if you are using
-         SolrCloud otherwise any leader election will cause a full sync in ALL
-         replicas for the shard in question. Similarly, a replica recovery will
-         also always fetch the complete index from the leader because a partial
-         sync will not be possible in the absence of this handler.
-    -->
-    <requestHandler name="/get" class="solr.RealTimeGetHandler">
-        <lst name="defaults">
-            <str name="omitHeader">true</str>
-            <str name="wt">json</str>
-            <str name="indent">true</str>
-        </lst>
-    </requestHandler>
 
     <!--
       The export request handler is used to export full sorted result sets.
@@ -945,34 +751,11 @@
         </arr>
     </requestHandler>
 
-    <!-- Update Request Handler.
-
-         http://wiki.apache.org/solr/UpdateXmlMessages
-
-         The canonical Request Handler for Modifying the Index through
-         commands specified using XML, JSON, CSV, or JAVABIN
-
-         Note: Since solr1.1 requestHandlers requires a valid content
-         type header if posted in the body. For example, curl now
-         requires: -H 'Content-type:text/xml; charset=utf-8'
-
-         To override the request content type and force a specific
-         Content-type, use the request parameter:
-           ?update.contentType=text/csv
-
-         This handler will pick a response format to match the input
-         if the 'wt' parameter is not explicit
-      -->
-    <requestHandler name="/update" class="solr.UpdateRequestHandler">
-        <!-- See below for information on defining
-             updateRequestProcessorChains that can be used by name
-             on each Update Request
-          -->
+    <initParams path="/update/**,/query,/select">
         <lst name="defaults">
-            <!-- <str name="update.chain">dedupe</str> -->
-            <str name="update.chain">langid</str>
+            <str name="df">text</str>
         </lst>
-    </requestHandler>
+    </initParams>
 
     <!-- The following are implicitly added
     <requestHandler name="/update/json" class="solr.UpdateRequestHandler">
@@ -986,6 +769,34 @@
          </lst>
     </requestHandler>
     -->
+    <!-- Update Request Handler.
+
+     http://wiki.apache.org/solr/UpdateXmlMessages
+
+     The canonical Request Handler for Modifying the Index through
+     commands specified using XML, JSON, CSV, or JAVABIN
+
+     Note: Since solr1.1 requestHandlers requires a valid content
+     type header if posted in the body. For example, curl now
+     requires: -H 'Content-type:text/xml; charset=utf-8'
+
+     To override the request content type and force a specific
+     Content-type, use the request parameter:
+       ?update.contentType=text/csv
+
+     This handler will pick a response format to match the input
+     if the 'wt' parameter is not explicit
+    -->
+    <requestHandler name="/update" class="solr.UpdateRequestHandler">
+        <!-- See below for information on defining
+             updateRequestProcessorChains that can be used by name
+             on each Update Request
+          -->
+        <lst name="defaults">
+            <!-- <str name="update.chain">dedupe</str> -->
+            <str name="update.chain">langid</str>
+        </lst>
+    </requestHandler>
 
     <!-- Solr Cell Update Request Handler
 
@@ -1000,151 +811,22 @@
             <str name="uprefix">ignored_</str>
             <str name="update.chain">langid</str>
             <!-- capture link hrefs but ignore div attributes -->
-            <!-- <str name="captureAttr">false</str> -->
-            <!-- <str name="fmap.a">links</str> -->
-            <!-- <str name="fmap.div">ignored_</str> -->
+            <!--
+            <str name="captureAttr">true</str>
+            -->
+            <!--
+            <str name="fmap.a">links</str>
+            -->
+            <!--
+            <str name="fmap.div">ignored_</str>
+            -->
         </lst>
         <lst name="date.formats">
             <str>yyyy:MM:dd hh:mm:ss</str>
         </lst>
     </requestHandler>
 
-    <!-- ping/healthcheck -->
-    <requestHandler name="/admin/ping" class="solr.PingRequestHandler">
-        <lst name="invariants">
-            <str name="q">solrpingquery</str>
-        </lst>
-        <lst name="defaults">
-            <str name="echoParams">all</str>
-        </lst>
-        <!-- An optional feature of the PingRequestHandler is to configure the
-             handler with a "healthcheckFile" which can be used to enable/disable
-             the PingRequestHandler.
-             relative paths are resolved against the data dir
-          -->
-        <!-- <str name="healthcheckFile">server-enabled.txt</str> -->
-    </requestHandler>
-
-    <!-- Echo the request contents back to the client -->
-    <requestHandler name="/debug/dump" class="solr.DumpRequestHandler" >
-        <lst name="defaults">
-            <str name="echoParams">explicit</str>
-            <str name="echoHandler">true</str>
-        </lst>
-    </requestHandler>
-
-    <!-- Solr Replication
-
-         The SolrReplicationHandler supports replicating indexes from a
-         "master" used for indexing and "slaves" used for queries.
-
-         http://wiki.apache.org/solr/SolrReplication
-
-         It is also necessary for SolrCloud to function (in Cloud mode, the
-         replication handler is used to bulk transfer segments when nodes
-         are added or need to recover).
-
-         https://wiki.apache.org/solr/SolrCloud/
-      -->
-    <requestHandler name="/replication" class="solr.ReplicationHandler" >
-        <!--
-           To enable simple master/slave replication, uncomment one of the
-           sections below, depending on whether this solr instance should be
-           the "master" or a "slave".  If this instance is a "slave" you will
-           also need to fill in the masterUrl to point to a real machine.
-        -->
-        <!--
-           <lst name="master">
-             <str name="replicateAfter">commit</str>
-             <str name="replicateAfter">startup</str>
-             <str name="confFiles">schema.xml,stopwords.txt</str>
-           </lst>
-        -->
-        <!--
-           <lst name="slave">
-             <str name="masterUrl">http://your-master-hostname:8983/solr</str>
-             <str name="pollInterval">00:00:60</str>
-           </lst>
-        -->
-    </requestHandler>
-
-    <!-- Search Components
-
-         Search components are registered to SolrCore and used by
-         instances of SearchHandler (which can access them by name)
-
-         By default, the following components are available:
-
-         <searchComponent name="query"     class="solr.QueryComponent" />
-         <searchComponent name="facet"     class="solr.FacetComponent" />
-         <searchComponent name="mlt"       class="solr.MoreLikeThisComponent" />
-         <searchComponent name="highlight" class="solr.HighlightComponent" />
-         <searchComponent name="stats"     class="solr.StatsComponent" />
-         <searchComponent name="debug"     class="solr.DebugComponent" />
-
-         Default configuration in a requestHandler would look like:
-
-         <arr name="components">
-           <str>query</str>
-           <str>facet</str>
-           <str>mlt</str>
-           <str>highlight</str>
-           <str>stats</str>
-           <str>debug</str>
-         </arr>
-
-         If you register a searchComponent to one of the standard names,
-         that will be used instead of the default.
-
-         To insert components before or after the 'standard' components, use:
-
-         <arr name="first-components">
-           <str>myFirstComponentName</str>
-         </arr>
-
-         <arr name="last-components">
-           <str>myLastComponentName</str>
-         </arr>
-
-         NOTE: The component registered with the name "debug" will
-         always be executed after the "last-components"
-
-       -->
-
-
-    <!-- Update Processors
-
-         Chains of Update Processor Factories for dealing with Update
-         Requests can be declared, and then used by name in Update
-         Request Processors
-
-         http://wiki.apache.org/solr/UpdateRequestProcessor
-
-      -->
-    <!-- Deduplication
-
-         An example dedup update processor that creates the "id" field
-         on the fly based on the hash code of some other fields.  This
-         example has overwriteDupes set to false since we are using the
-         id field as the signatureField and Solr will maintain
-         uniqueness based on that anyway.
-
-      -->
-    <!--
-       <updateRequestProcessorChain name="dedupe">
-         <processor class="solr.processor.SignatureUpdateProcessorFactory">
-           <bool name="enabled">true</bool>
-           <str name="signatureField">id</str>
-           <bool name="overwriteDupes">false</bool>
-           <str name="fields">name,features,cat</str>
-           <str name="signatureClass">solr.processor.Lookup3Signature</str>
-         </processor>
-         <processor class="solr.LogUpdateProcessorFactory" />
-         <processor class="solr.RunUpdateProcessorFactory" />
-       </updateRequestProcessorChain>
-      -->
-
-    <!-- Language identification
+   <!-- Language identification
 
          This example update chain identifies the language of the incoming
          documents using the langid contrib. The detected language is
@@ -1154,7 +836,6 @@
          rich documents injected via ExtractingRequestHandler.
          See more about langId at http://wiki.apache.org/solr/LanguageDetection
       -->
-    <!-- Language Detection -->
     <updateRequestProcessorChain name="langid">
         <processor class="org.apache.solr.update.processor.LangDetectLanguageIdentifierUpdateProcessorFactory">
             <bool name="langid">true</bool>
@@ -1202,7 +883,6 @@
         -->
         <str name="content-type">text/plain; charset=UTF-8</str>
     </queryResponseWriter>
-
 
     <!-- Legacy config for the admin interface -->
     <admin>
